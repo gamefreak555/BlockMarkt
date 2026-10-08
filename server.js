@@ -7,6 +7,7 @@ if(db.cv!==2){db.items=cat.concat((db.items||[]).filter(i=>i.custom));db.cv=2;fs
 const wiki=new Set(fs.existsSync(path.join(__dirname,'public/img-wiki'))?fs.readdirSync(path.join(__dirname,'public/img-wiki')).filter(f=>f.endsWith('.png')).map(f=>f.slice(0,-4)):[]);
 const save=()=>fs.writeFileSync(F,JSON.stringify(db,null,1));
 if(!db.currencies){db.currencies=[{id:'diamond',en:'Diamond',de:'Diamant'},{id:'netherite',en:'Netherite Ingot',de:'Netherite-Barren'}];save()}
+if(!db.express){db.express={on:true,fee:1,cur:{id:'diamond',en:'Diamond',de:'Diamant'}};save()}
 const curOf=(id,text)=>{if(id==='other'){const t=String(text||'').trim().slice(0,40);return t?{id:'other',en:t,de:t,other:true}:null}
  const c=db.currencies.find(x=>String(x.id)===String(id));return c?{id:c.id,en:c.en,de:c.de}:null};
 const curKey=c=>c?(c.id==='other'?'other:'+c.en.toLowerCase():String(c.id)):'';
@@ -37,6 +38,13 @@ app.post('/api/items',auth,adm,(q,r)=>{const name=String(q.body.name||'').trim()
  if(!name)return r.status(400).json({error:'name'});const id=Date.now(),it={id,name,de:name,stack,img:0,custom:true};
  if(q.body.image){const p=saveImg(id,q.body.image);if(!p)return r.status(400).json({error:'invalid_image'});it.pic=p}
  db.items.push(it);save();r.json({ok:1})});
+app.put('/api/items/:id',auth,adm,(q,r)=>{const i=db.items.find(x=>x.id==q.params.id);if(!i)return r.status(400).json({error:'no_item'});
+ const name=String(q.body.name||'').trim().slice(0,60),de=String(q.body.de||'').trim().slice(0,60)||name,stack=[1,16,64].includes(+q.body.stack)?+q.body.stack:i.stack;
+ if(!name)return r.status(400).json({error:'name'});
+ if(q.body.image){const p=saveImg(i.id,q.body.image);if(!p)return r.status(400).json({error:'invalid_image'});i.pic=p}
+ i.name=name;i.de=de;
+ if(stack!==i.stack){i.stack=stack;(db.prices||[]).forEach(p=>{if(p.itemId===i.id)p.qty=p.count*(p.unit==='item'?1:p.unit==='stack'?stack:54*stack)})}
+ save();r.json({ok:1})});
 app.post('/api/items/:id/image',auth,adm,(q,r)=>{const i=db.items.find(x=>x.id==q.params.id&&x.custom);if(!i)return r.status(400).json({error:'no_item'});
  const p=saveImg(i.id,q.body.image);if(!p)return r.status(400).json({error:'invalid_image'});i.pic=p;save();r.json({ok:1})});
 app.delete('/api/items/:id',auth,adm,(q,r)=>{if(/^\d+$/.test(q.params.id))rmImg(q.params.id);db.items=db.items.filter(i=>i.id!=q.params.id);db.prices=(db.prices||[]).filter(p=>p.itemId!=q.params.id);save();r.json({ok:1})});
@@ -54,6 +62,20 @@ app.post('/api/currencies',auth,adm,(q,r)=>{const name=String(q.body.name||'').t
  if(db.currencies.some(c=>c.en.toLowerCase()===name.toLowerCase()||c.de.toLowerCase()===name.toLowerCase()))return r.status(400).json({error:'cur_exists'});
  db.currencies.push({id:String(Date.now()),en:name,de:name,custom:true});save();r.json({ok:1})});
 app.delete('/api/currencies/:id',auth,adm,(q,r)=>{db.currencies=db.currencies.filter(c=>String(c.id)!==q.params.id);save();r.json({ok:1})});
+app.get('/api/express',(q,r)=>r.json(db.express));
+app.post('/api/express',auth,adm,(q,r)=>{const fee=+q.body.fee,cur=curOf(q.body.currency,q.body.currencyText);
+ if(q.body.fee===''||q.body.fee==null||!(fee>=0))return r.status(400).json({error:'invalid_price'});
+ if(!cur)return r.status(400).json({error:'invalid_currency'});
+ db.express={on:!!q.body.on,fee,cur};save();r.json({ok:1})});
+app.get('/api/stats',auth,(q,r)=>{if(role(q.session.user)==='buyer')return r.status(403).json({error:'not_possible'});
+ const m=new Map(),sl=new Map();let orders=0,pieces=0;
+ for(const o of db.orders){if(o.status!=='angenommen')continue;
+  const it=db.items.find(x=>x.id===o.itemId)||{},qty=o.count*(o.unit==='item'?1:o.unit==='stack'?o.stack:54*o.stack),k=it.k||o.k||'';
+  let e=m.get(o.itemId);if(!e){e={itemId:o.itemId,name:it.name||o.itemName||o.item,de:it.de||o.itemDe||o.item,k,img:(it.img??o.img)?1:0,pic:it.pic||o.pic||'',w:wiki.has(k),orders:0,qty:0,rev:{}};m.set(o.itemId,e)}
+  e.orders++;e.qty+=qty;orders++;pieces+=qty;
+  const last=o.offers.at(-1);if(o.cur&&last){const c=curKey(o.cur);e.rev[c]=e.rev[c]||{en:o.cur.en,de:o.cur.de,sum:0};e.rev[c].sum=Math.round((e.rev[c].sum+last.price)*1e6)/1e6}
+  if(o.sellerId){const x=sl.get(o.sellerId)||{name:o.sellerName,orders:0,qty:0};x.orders++;x.qty+=qty;sl.set(o.sellerId,x)}}
+ r.json({orders,pieces,open:db.orders.filter(o=>o.status==='offen').length,items:[...m.values()].sort((a,b)=>b.qty-a.qty),sellers:[...sl.values()].sort((a,b)=>b.qty-a.qty).slice(0,5)})});
 app.get('/api/sellers',auth,adm,(q,r)=>r.json(db.sellers));
 app.post('/api/sellers',auth,adm,(q,r)=>{const id=String(q.body.id||'').trim();
  if(!/^\d{15,22}$/.test(id))return r.status(400).json({error:'invalid_id'});
@@ -63,14 +85,14 @@ const canDel=(o,u)=>{const ro=role(u);return ro==='admin'||(ro==='seller'&&o.sta
 const side=(o,u)=>u.id===o.buyerId?'buyer':(role(u)!=='buyer'&&(!o.sellerId||o.sellerId===u.id||role(u)==='admin'))?'seller':null;
 const view=(o,u)=>{const i=db.items.find(x=>x.id===o.itemId)||{name:o.itemName,stack:o.stack};
  return {...o,pic:i.pic||o.pic||'',w:wiki.has(o.k),side:side(o,u),canDel:canDel(o,u),unitLabel:{item:'Item(s)',stack:'Stack(s)',dk:'Doppelkiste(n)'}[o.unit],qty:o.count*(o.unit==='item'?1:o.unit==='stack'?o.stack:54*o.stack)}};
-app.post('/api/orders',auth,(q,r)=>{let b=q.body;const fx=b.fixedId?(db.prices||[]).find(p=>p.id==b.fixedId):null;if(b.fixedId&&!fx)return r.status(400).json({error:'invalid_order'});const cur=fx?(fx.cur||null):curOf(b.currency,b.currencyText);const mu=fx?Math.floor(+b.mult||1):1;if(fx&&!(mu>=1&&mu<=10000))return r.status(400).json({error:'invalid_order'});
+app.post('/api/orders',auth,(q,r)=>{let b=q.body;const ex=!!b.express&&!!db.express&&db.express.on;const fx=b.fixedId?(db.prices||[]).find(p=>p.id==b.fixedId):null;if(b.fixedId&&!fx)return r.status(400).json({error:'invalid_order'});const cur=fx?(fx.cur||null):curOf(b.currency,b.currencyText);const mu=fx?Math.floor(+b.mult||1):1;if(fx&&!(mu>=1&&mu<=10000))return r.status(400).json({error:'invalid_order'});
  if(fx)b={itemId:fx.itemId,unit:fx.unit,count:fx.count*mu,price:Math.round(fx.price*mu*1e6)/1e6,note:b.note};const i=db.items.find(x=>x.id===b.itemId),u=q.session.user;
  if(!i||!['item','stack','dk'].includes(b.unit)||!(b.count>=1)||!(b.price>=0))return r.status(400).json({error:'invalid_order'});
  if(!fx&&!cur)return r.status(400).json({error:'invalid_currency'});
  db.orders.push({id:db.n++,itemId:i.id,itemName:i.name,item:i.name,itemDe:i.de||i.name,k:i.k||'',img:i.img?1:0,pic:i.pic||'',stack:i.stack,unit:b.unit,count:Math.floor(b.count),note:String(b.note||'').slice(0,120),
-  buyerId:u.id,buyerName:u.name,sellerId:null,sellerName:null,status:'offen',fixed:!!fx,cur,offers:[{by:'buyer',name:u.name,price:+b.price}]});save();r.json({ok:1})});
+  buyerId:u.id,buyerName:u.name,sellerId:null,sellerName:null,status:'offen',fixed:!!fx,cur,express:ex?{fee:db.express.fee,cur:db.express.cur}:null,offers:[{by:'buyer',name:u.name,price:+b.price}]});save();r.json({ok:1})});
 app.get('/api/orders',auth,(q,r)=>{const u=q.session.user,ro=role(u);
- r.json(db.orders.filter(o=>o.buyerId===u.id||ro==='admin'||(ro==='seller'&&(!o.sellerId||o.sellerId===u.id))).map(o=>view(o,u)).reverse())});
+ r.json(db.orders.filter(o=>o.buyerId===u.id||ro==='admin'||(ro==='seller'&&(!o.sellerId||o.sellerId===u.id))).map(o=>view(o,u)).reverse().sort((a,b)=>(!!b.express&&b.status==='offen')-(!!a.express&&a.status==='offen')))});
 const getO=(q,r)=>{const o=db.orders.find(x=>x.id==q.params.id),s=o&&side(o,q.session.user);
  if(!o||!s||o.status!=='offen'){r.status(400).json({error:'not_possible'});return[]}return[o,s]};
 const claim=(o,s,u)=>{if(s==='seller'&&!o.sellerId){o.sellerId=u.id;o.sellerName=u.name}};
