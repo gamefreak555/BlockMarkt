@@ -1,0 +1,93 @@
+const path=require('path'),express=require('express'),session=require('express-session'),fs=require('fs');
+const {DISCORD_CLIENT_ID:CID,DISCORD_CLIENT_SECRET:SEC,BASE_URL='http://localhost:3000',SESSION_SECRET='dev',ADMIN_IDS='',PORT=3000}=process.env;
+const F=path.join(__dirname,'data.json'),admins=ADMIN_IDS.split(',').map(s=>s.trim()).filter(Boolean);
+const cat=JSON.parse(fs.readFileSync(path.join(__dirname,'catalog.json')));
+const db=fs.existsSync(F)?JSON.parse(fs.readFileSync(F)):{sellers:[],n:1,orders:[]};
+if(db.cv!==2){db.items=cat.concat((db.items||[]).filter(i=>i.custom));db.cv=2;fs.writeFileSync(F,JSON.stringify(db,null,1))}
+const wiki=new Set(fs.existsSync(path.join(__dirname,'public/img-wiki'))?fs.readdirSync(path.join(__dirname,'public/img-wiki')).filter(f=>f.endsWith('.png')).map(f=>f.slice(0,-4)):[]);
+const save=()=>fs.writeFileSync(F,JSON.stringify(db,null,1));
+if(!db.currencies){db.currencies=[{id:'diamond',en:'Diamond',de:'Diamant'},{id:'netherite',en:'Netherite Ingot',de:'Netherite-Barren'}];save()}
+const curOf=(id,text)=>{if(id==='other'){const t=String(text||'').trim().slice(0,40);return t?{id:'other',en:t,de:t,other:true}:null}
+ const c=db.currencies.find(x=>String(x.id)===String(id));return c?{id:c.id,en:c.en,de:c.de}:null};
+const curKey=c=>c?(c.id==='other'?'other:'+c.en.toLowerCase():String(c.id)):'';
+const role=u=>admins.includes(u.id)?'admin':db.sellers.some(s=>s.id===u.id)?'seller':'buyer';
+const IMG=path.join(__dirname,'public/img-custom');fs.mkdirSync(IMG,{recursive:true});
+const rmImg=id=>{for(const f of fs.readdirSync(IMG))if(f.startsWith(id+'.'))fs.unlinkSync(path.join(IMG,f))};
+const saveImg=(id,d)=>{const m=/^data:image\/(png|jpeg|webp|gif);base64,([A-Za-z0-9+\/=]+)$/.exec(String(d||''));if(!m)return null;
+ const buf=Buffer.from(m[2],'base64');if(!buf.length||buf.length>2e6)return null;
+ rmImg(String(id));const ext=m[1]==='jpeg'?'jpg':m[1];fs.writeFileSync(path.join(IMG,id+'.'+ext),buf);return 'img-custom/'+id+'.'+ext+'?v='+Date.now()};
+const app=express();app.use(express.json({limit:'3mb'}));
+app.use(session({secret:SESSION_SECRET,resave:false,saveUninitialized:false}));
+app.use(express.static(path.join(__dirname,'public')));
+const auth=(q,r,n)=>q.session.user?n():r.status(401).json({error:'login'});
+const adm=(q,r,n)=>role(q.session.user)==='admin'?n():r.status(403).json({error:'admin'});
+// --- Discord OAuth2 ---
+app.get('/auth/login',(q,r)=>{q.session.state=Math.random().toString(36).slice(2);
+ r.redirect('https://discord.com/oauth2/authorize?'+new URLSearchParams({client_id:CID,response_type:'code',scope:'identify',redirect_uri:BASE_URL+'/auth/callback',state:q.session.state}))});
+app.get('/auth/callback',async(q,r)=>{try{
+ if(!q.query.state||q.query.state!==q.session.state)throw 0;
+ const t=await(await fetch('https://discord.com/api/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:CID,client_secret:SEC,grant_type:'authorization_code',code:q.query.code,redirect_uri:BASE_URL+'/auth/callback'})})).json();
+ const u=await(await fetch('https://discord.com/api/users/@me',{headers:{Authorization:'Bearer '+t.access_token}})).json();
+ if(!u.id)throw 0;q.session.user={id:u.id,name:u.global_name||u.username};r.redirect('/')}catch{r.status(400).send('Login failed / Login fehlgeschlagen')}});
+app.get('/auth/logout',(q,r)=>q.session.destroy(()=>r.redirect('/')));
+// --- API ---
+app.get('/api/me',(q,r)=>{const u=q.session.user;r.json({user:u||null,role:u?role(u):null})});
+app.get('/api/items',(q,r)=>r.json(db.items.map(i=>({...i,w:wiki.has(i.k)}))));
+app.post('/api/items',auth,adm,(q,r)=>{const name=String(q.body.name||'').trim().slice(0,60),stack=[1,16,64].includes(+q.body.stack)?+q.body.stack:64;
+ if(!name)return r.status(400).json({error:'name'});const id=Date.now(),it={id,name,de:name,stack,img:0,custom:true};
+ if(q.body.image){const p=saveImg(id,q.body.image);if(!p)return r.status(400).json({error:'invalid_image'});it.pic=p}
+ db.items.push(it);save();r.json({ok:1})});
+app.post('/api/items/:id/image',auth,adm,(q,r)=>{const i=db.items.find(x=>x.id==q.params.id&&x.custom);if(!i)return r.status(400).json({error:'no_item'});
+ const p=saveImg(i.id,q.body.image);if(!p)return r.status(400).json({error:'invalid_image'});i.pic=p;save();r.json({ok:1})});
+app.delete('/api/items/:id',auth,adm,(q,r)=>{if(/^\d+$/.test(q.params.id))rmImg(q.params.id);db.items=db.items.filter(i=>i.id!=q.params.id);db.prices=(db.prices||[]).filter(p=>p.itemId!=q.params.id);save();r.json({ok:1})});
+app.get('/api/prices',(q,r)=>r.json((db.prices||[]).filter(p=>db.items.some(i=>i.id===p.itemId))));
+app.post('/api/prices',auth,adm,(q,r)=>{const b=q.body,i=db.items.find(x=>x.id===b.itemId),c=Math.floor(+b.count),p=+b.price;
+ if(!i||!['item','stack','dk'].includes(b.unit)||!(c>=1)||!(p>=0)||b.price===''||b.price==null)return r.status(400).json({error:'invalid_price'});
+ const cur=curOf(b.currency,b.currencyText);if(!cur)return r.status(400).json({error:'invalid_currency'});
+ const qty=c*(b.unit==='item'?1:b.unit==='stack'?i.stack:54*i.stack);
+ db.prices=(db.prices||[]).filter(x=>!(x.itemId===i.id&&x.qty===qty&&curKey(x.cur)===curKey(cur)));
+ db.prices.push({id:Date.now(),itemId:i.id,unit:b.unit,count:c,qty,price:p,cur});save();r.json({ok:1})});
+app.delete('/api/prices/:id',auth,adm,(q,r)=>{db.prices=(db.prices||[]).filter(p=>p.id!=q.params.id);save();r.json({ok:1})});
+app.get('/api/currencies',(q,r)=>r.json(db.currencies));
+app.post('/api/currencies',auth,adm,(q,r)=>{const name=String(q.body.name||'').trim().slice(0,40);
+ if(!name)return r.status(400).json({error:'name'});
+ if(db.currencies.some(c=>c.en.toLowerCase()===name.toLowerCase()||c.de.toLowerCase()===name.toLowerCase()))return r.status(400).json({error:'cur_exists'});
+ db.currencies.push({id:String(Date.now()),en:name,de:name,custom:true});save();r.json({ok:1})});
+app.delete('/api/currencies/:id',auth,adm,(q,r)=>{db.currencies=db.currencies.filter(c=>String(c.id)!==q.params.id);save();r.json({ok:1})});
+app.get('/api/sellers',auth,adm,(q,r)=>r.json(db.sellers));
+app.post('/api/sellers',auth,adm,(q,r)=>{const id=String(q.body.id||'').trim();
+ if(!/^\d{15,22}$/.test(id))return r.status(400).json({error:'invalid_id'});
+ if(!db.sellers.some(s=>s.id===id))db.sellers.push({id,note:String(q.body.note||'').slice(0,60)});save();r.json({ok:1})});
+app.delete('/api/sellers/:id',auth,adm,(q,r)=>{db.sellers=db.sellers.filter(s=>s.id!==q.params.id);save();r.json({ok:1})});
+const canDel=(o,u)=>{const ro=role(u);return ro==='admin'||(ro==='seller'&&o.status!=='offen'&&(!o.sellerId||o.sellerId===u.id))};
+const side=(o,u)=>u.id===o.buyerId?'buyer':(role(u)!=='buyer'&&(!o.sellerId||o.sellerId===u.id||role(u)==='admin'))?'seller':null;
+const view=(o,u)=>{const i=db.items.find(x=>x.id===o.itemId)||{name:o.itemName,stack:o.stack};
+ return {...o,pic:i.pic||o.pic||'',w:wiki.has(o.k),side:side(o,u),canDel:canDel(o,u),unitLabel:{item:'Item(s)',stack:'Stack(s)',dk:'Doppelkiste(n)'}[o.unit],qty:o.count*(o.unit==='item'?1:o.unit==='stack'?o.stack:54*o.stack)}};
+app.post('/api/orders',auth,(q,r)=>{let b=q.body;const fx=b.fixedId?(db.prices||[]).find(p=>p.id==b.fixedId):null;if(b.fixedId&&!fx)return r.status(400).json({error:'invalid_order'});const cur=fx?(fx.cur||null):curOf(b.currency,b.currencyText);const mu=fx?Math.floor(+b.mult||1):1;if(fx&&!(mu>=1&&mu<=10000))return r.status(400).json({error:'invalid_order'});
+ if(fx)b={itemId:fx.itemId,unit:fx.unit,count:fx.count*mu,price:Math.round(fx.price*mu*1e6)/1e6,note:b.note};const i=db.items.find(x=>x.id===b.itemId),u=q.session.user;
+ if(!i||!['item','stack','dk'].includes(b.unit)||!(b.count>=1)||!(b.price>=0))return r.status(400).json({error:'invalid_order'});
+ if(!fx&&!cur)return r.status(400).json({error:'invalid_currency'});
+ db.orders.push({id:db.n++,itemId:i.id,itemName:i.name,item:i.name,itemDe:i.de||i.name,k:i.k||'',img:i.img?1:0,pic:i.pic||'',stack:i.stack,unit:b.unit,count:Math.floor(b.count),note:String(b.note||'').slice(0,120),
+  buyerId:u.id,buyerName:u.name,sellerId:null,sellerName:null,status:'offen',fixed:!!fx,cur,offers:[{by:'buyer',name:u.name,price:+b.price}]});save();r.json({ok:1})});
+app.get('/api/orders',auth,(q,r)=>{const u=q.session.user,ro=role(u);
+ r.json(db.orders.filter(o=>o.buyerId===u.id||ro==='admin'||(ro==='seller'&&(!o.sellerId||o.sellerId===u.id))).map(o=>view(o,u)).reverse())});
+const getO=(q,r)=>{const o=db.orders.find(x=>x.id==q.params.id),s=o&&side(o,q.session.user);
+ if(!o||!s||o.status!=='offen'){r.status(400).json({error:'not_possible'});return[]}return[o,s]};
+const claim=(o,s,u)=>{if(s==='seller'&&!o.sellerId){o.sellerId=u.id;o.sellerName=u.name}};
+app.post('/api/orders/:id/offer',auth,(q,r)=>{const[o,s]=getO(q,r);if(!o)return;if(o.fixed)return r.status(400).json({error:'fixed'});const u=q.session.user,p=+q.body.price;
+ if(!(p>=0)||o.offers.at(-1).by===s)return r.status(400).json({error:'not_turn'});
+ claim(o,s,u);o.offers.push({by:s,name:u.name,price:p});save();r.json({ok:1})});
+app.post('/api/orders/:id/accept',auth,(q,r)=>{const[o,s]=getO(q,r);if(!o)return;
+ if(o.offers.at(-1).by===s)return r.status(400).json({error:'not_turn'});
+ claim(o,s,q.session.user);o.status='angenommen';save();r.json({ok:1})});
+app.post('/api/orders/:id/decline',auth,(q,r)=>{const[o]=getO(q,r);if(!o)return;o.status='abgelehnt';save();r.json({ok:1})});
+app.post('/api/orders/:id/chat',auth,(q,r)=>{const o=db.orders.find(x=>x.id==q.params.id),u=q.session.user,s=o&&side(o,u),t=String(q.body.text||'').trim().slice(0,500);
+ if(!o||!s||o.status==='abgelehnt')return r.status(400).json({error:'not_possible'});
+ if(!t)return r.status(400).json({error:'empty'});
+ o.msgs=o.msgs||[];if(o.msgs.length>=300)return r.status(400).json({error:'chat_full'});
+ claim(o,s,u);o.msgs.push({by:s,name:u.name,text:t,t:Date.now()});save();r.json({ok:1})});
+app.delete('/api/orders/finished',auth,(q,r)=>{const u=q.session.user;if(role(u)==='buyer')return r.status(403).json({error:'not_possible'});
+ const n=db.orders.length;db.orders=db.orders.filter(o=>!(o.status!=='offen'&&canDel(o,u)));save();r.json({ok:1,deleted:n-db.orders.length})});
+app.delete('/api/orders/:id',auth,(q,r)=>{const o=db.orders.find(x=>x.id==q.params.id);if(!o||!canDel(o,q.session.user))return r.status(400).json({error:'not_possible'});
+ db.orders=db.orders.filter(x=>x!==o);save();r.json({ok:1})});
+app.listen(PORT,()=>console.log('BlockMarkt läuft auf '+BASE_URL));

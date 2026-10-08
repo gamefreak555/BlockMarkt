@@ -1,0 +1,176 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BlockMarkt</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px/1.4 Arial,Helvetica,sans-serif;background:#eaeded;color:#0f1111}a{text-decoration:none}
+input,select{font:inherit;padding:7px 10px;border-radius:4px;border:1px solid #888c8c;background:#fff;color:#0f1111}
+button{font:inherit;cursor:pointer;padding:7px 16px;border-radius:20px;border:1px solid #fcd200;background:#ffd814;color:#0f1111}
+button:hover{background:#f7ca00}button.s{background:#fff;border-color:#d5d9d9}button.s:hover{background:#f7fafa}
+button.ok{background:#ffa41c;border-color:#ff8f00}button.ok:hover{background:#fa8900}
+header{background:#131921;color:#fff;display:flex;gap:14px;align-items:center;padding:8px clamp(12px,3vw,32px);flex-wrap:wrap}
+.logo{font-size:22px;font-weight:700;color:#fff}.logo b{color:#febd69}
+.sb{flex:1;display:flex;min-width:220px;max-width:760px}.sb input{flex:1;border:0;border-radius:4px 0 0 4px;padding:10px 12px}
+.sb button{background:#febd69;border:0;border-radius:0 4px 4px 0;padding:0 18px}.sb button:hover{background:#f3a847}
+header button.s{background:transparent;border-color:#555;color:#fff}header button.s:hover{background:#2b3645}
+.acc{display:inline-flex;flex-direction:column;line-height:1.2;font-size:12px;margin-right:6px}.acc b{font-size:14px}
+#tabs{background:#232f3e;padding:4px clamp(12px,3vw,32px);display:flex;gap:6px;flex-wrap:wrap}
+#tabs button{background:none;border:1px solid transparent;border-radius:2px;color:#fff;padding:7px 12px}
+#tabs button:not(.s){border-color:#fff}#tabs button:hover{border-color:#fff}
+main{max-width:1700px;margin:16px auto;padding:0 clamp(12px,3vw,32px)}
+.hero{background:linear-gradient(135deg,#232f3e,#37475a);color:#fff;padding:22px 24px;border-radius:6px;margin-bottom:14px;font-size:18px}
+#cnt{margin:0 0 10px;font-size:13px;color:#565959}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.card{background:#fff;border:1px solid #d5d9d9;border-radius:8px;padding:14px}
+.p{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:12px}.p small{color:#565959}.p button{margin-top:4px}
+.t{color:#007185;cursor:pointer;font-size:15px;line-height:1.3}.t:hover{color:#c7511f;text-decoration:underline}
+.ic{display:grid;place-items:center;font-size:32px;background:#f0f2f2;border-radius:4px}
+img.ic{background:#f7f8f8;image-rendering:pixelated;object-fit:contain}
+.p .ic{width:100%;height:120px;padding:10px}dialog .ic{width:72px;height:72px;margin-bottom:8px}
+.tag{border-radius:4px;padding:2px 8px;font-size:12px;margin-left:6px;background:#eee}
+.tag.offen{background:#fff3cd;color:#8a6d00}.tag.angenommen{background:#d4edda;color:#1e6b34}.tag.abgelehnt{background:#f8d7da;color:#842029}
+.pr{color:#b12704}
+dialog{background:#fff;color:#0f1111;border:0;border-radius:10px;width:min(94vw,460px);max-height:92vh;overflow:auto}dialog::backdrop{background:#0008}
+footer{background:#232f3e;color:#ddd;text-align:center;padding:18px;margin-top:30px;font-size:12px}
+html[data-theme=dark]{color-scheme:dark}
+html[data-theme=dark] body{background:#0f1111;color:#e7e9ea}
+html[data-theme=dark] .card{background:#1a1f26;border-color:#2f3a45}
+html[data-theme=dark] input,html[data-theme=dark] select{background:#232a33;color:#e7e9ea;border-color:#4a5560}
+html[data-theme=dark] .sb input{background:#2b333c;color:#fff}
+html[data-theme=dark] button.s{background:#232a33;color:#e7e9ea;border-color:#3b4753}
+html[data-theme=dark] button.s:hover{background:#2b333c}
+html[data-theme=dark] .ic{background:#232a33}html[data-theme=dark] img.ic{background:#1f252d}
+html[data-theme=dark] .t{color:#4db8d1}html[data-theme=dark] .t:hover{color:#ffa41c}
+html[data-theme=dark] #cnt,html[data-theme=dark] .p small{color:#9aa4ad}
+html[data-theme=dark] dialog{background:#1a1f26;color:#e7e9ea}
+html[data-theme=dark] .tag{background:#2d353e;color:#e7e9ea}
+html[data-theme=dark] .tag.offen{background:#4a3f0f;color:#ffd966}html[data-theme=dark] .tag.angenommen{background:#17381f;color:#7fd69a}html[data-theme=dark] .tag.abgelehnt{background:#4a1d22;color:#f1a0a8}
+html[data-theme=dark] .pr{color:#ff8a65}
+.fx{color:#007600;font-weight:600}.fxl{display:flex;flex-direction:column;gap:6px}.fxr{display:flex;flex-direction:column;line-height:1.15}.fxp{font-size:22px}.p button.rq{padding:3px 12px;font-size:12px;margin-top:2px}.fxbox{background:#f0f8f5;border:1px solid #b7dfd2;border-radius:6px;padding:8px 10px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}
+html[data-theme=dark] .fx{color:#4cc38a}html[data-theme=dark] .fxbox{background:#16332a;border-color:#285a49}
+button.fl{padding:5px 7px;line-height:0;border-radius:6px;opacity:.5;border-color:#555}button.fl.on{opacity:1;border-color:#febd69;box-shadow:0 0 0 1px #febd69}button.fl svg{display:block;height:16px;width:auto;border-radius:2px}
+.card{overflow-wrap:anywhere}
+button.dl{float:right;padding:3px 10px;font-size:12px;margin-left:8px}.otb{display:flex;justify-content:flex-end;margin-bottom:10px}
+.fxrow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;padding:4px 0}.fxm{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.fxm input{width:76px}
+#toasts{position:fixed;inset:14px 14px auto 14px;margin:0;padding:0;border:0;background:none;overflow:visible;width:auto;height:auto;max-height:none;z-index:2000;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;width:min(420px,100%);background:#fff;color:#0f1111;border:1px solid #d5d9d9;border-left:5px solid #c7511f;border-radius:10px;padding:11px 12px;box-shadow:0 8px 28px #0003;animation:tin .25s ease}
+.toast.ok{border-left-color:#1e8e4e}.toast.info{border-left-color:#007185}
+.toast .ti{font-size:18px;line-height:1.25}.toast .tm{flex:1;line-height:1.4;padding-top:1px}
+.toast .tx2{background:none;border:0;padding:0 4px;font-size:20px;line-height:1;color:inherit;opacity:.55;border-radius:4px}.toast .tx2:hover{opacity:1;background:none}
+.toast.out{opacity:0;transform:translateX(24px);transition:.25s}
+@keyframes tin{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+.lp{text-align:center;padding:10px 14px 6px}.lp .lpi{font-size:38px;line-height:1.1}.lp h3{margin:6px 0 4px}.lp p{margin:0 0 16px;color:#565959}.lpb{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.lpb a{text-decoration:none}
+button.dc{background:#5865f2;border-color:#4752c4;color:#fff;font-weight:600}button.dc:hover{background:#4752c4}
+html[data-theme=dark] .toast{background:#1a1f26;color:#e7e9ea;border-color:#2f3a45}html[data-theme=dark] .toast.ok{border-left-color:#3fb36f}html[data-theme=dark] .toast{border-left-color:#ff8a65}html[data-theme=dark] .toast.ok{border-left-color:#3fb36f}html[data-theme=dark] .toast.info{border-left-color:#4db8d1}html[data-theme=dark] .lp p{color:#9aa4ad}
+.chat{margin-top:10px;border-top:1px solid #d5d9d9;padding-top:8px}.chat summary{cursor:pointer;font-weight:600}
+.badge{background:#c7511f;color:#fff;border-radius:10px;padding:1px 7px;font-size:12px}
+.msgs{max-height:240px;overflow:auto;display:flex;flex-direction:column;gap:6px;margin:8px 0;padding:4px}
+.msg{max-width:80%;padding:6px 10px;border-radius:10px;background:#f0f2f2}.msg.me{align-self:flex-end;background:#ffe9a8}.msg.them{align-self:flex-start}
+.msg small{color:#565959;display:block;font-size:11px}.msg .tx{white-space:pre-wrap;overflow-wrap:anywhere}
+.cin{display:flex;gap:6px}.cin input{flex:1;min-width:0}
+html[data-theme=dark] .chat{border-color:#2f3a45}html[data-theme=dark] .msg{background:#2b333c}html[data-theme=dark] .msg.me{background:#5a4a14}html[data-theme=dark] .msg small{color:#9aa4ad}#view input,#view select{max-width:100%}
+@media(min-width:1500px){.grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
+@media(max-width:700px){.sb{order:3;flex-basis:100%;max-width:none}.hero{padding:16px;font-size:15px}.grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px}.p .ic{height:90px}.fxp{font-size:18px}.logo{font-size:19px}header{gap:8px}#tabs{flex-wrap:nowrap;overflow-x:auto}#tabs button{white-space:nowrap}}
+@media(max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.p{padding:10px}.card{padding:10px}}
+</style>
+<header><a class=logo href="/">⛏ Block<b>Markt</b></a>
+<div class=sb><input id=q oninput="search()"><button onclick="search()">🔍</button></div>
+<button class=s id=th onclick="toggleTheme()" style="padding:4px 8px;font-size:16px"></button><span id=lang></span><span id=nav></span></header>
+<nav id=tabs></nav><main><div id=view></div></main><footer id=ft></footer><dialog id=dlg></dialog><div id=toasts popover=manual aria-live=polite></div>
+<script>
+const TR={en:{del_fin:'Delete finished requests',del_confirm:'Delete this request permanently? It will also disappear for the buyer.',del_fin_confirm:'Delete all finished requests (accepted/declined) permanently? They will also disappear for the buyers.',ok_deleted:'Deleted',login_h:'Sign in required',ok_sent:'Order sent',fx_qty:'Quantity',err_x:'Something went wrong',chat:'Chat',chat_ph:'Write a message…',chat_send:'Send',chat_empty:'No messages yet.',err_empty:'Message is empty',err_chat_full:'Chat is full (300 messages)',img_pick:'Image (optional)',img_change:'Change image',err_invalid_image:'Invalid image (max. 2 MB)',cur_h:'Payment currencies',cur_label:'Payment',cur_other:'Other (type your own)…',cur_other_ph:'What do you want to pay with?',cur_name:'Currency name',err_invalid_currency:'Please choose a payment currency (or describe "Other")',err_cur_exists:'Currency already exists',fixedh:'Fixed prices',buyfixed:'Order at fixed price',orneg:'Or make your own offer:',fixedavail:'Fixed price available',fixedtag:'Fixed price',fp_h:'Fixed prices (admin)',fp_price:'Price',err_fixed:'Fixed-price order – no counteroffers',err_invalid_price:'Invalid fixed price',err_no_item:'Item not found',light:'Light mode',dark:'Dark mode',results:'results',hello:'Hello,',banner:'Negotiate your price – buyers and sellers agree on the deal.',foot:'BlockMarkt – Minecraft item marketplace. Not affiliated with Mojang, Microsoft or Amazon.',login:'Sign in with Discord',logout:'Logout',shop:'Shop',myorders:'My orders',requests:'Requests',admin:'Admin',search:'Search item…',stack:'Stack',request:'Request',loginfirst:'Please sign in with Discord first',u_item:'Single items',u_stack:'Stacks',u_dk:'Double chests',price:'Your price offer',note:'Note (in-game name, location…)',send:'Send order',cancel:'Cancel',none:'No entries.',buyer:'Buyer',seller:'Seller',pcs:'pcs',accept:'Accept',counterph:'Counteroffer',counter:'Counter',waiting:'Waiting for reply…',decline:'Decline',st_offen:'Open',st_angenommen:'Accepted',st_abgelehnt:'Declined',sellers_h:'Sellers (Discord IDs)',nosellers:'No sellers yet.',remove:'Remove',did:'Discord ID',nn:'Name/note',add:'Add',items_h:'Items',del:'Delete',iname:'Item name',additem:'Add item',r_admin:'admin',r_seller:'seller',r_buyer:'buyer',ul_item:'item(s)',ul_stack:'stack(s)',ul_dk:'double chest(s)',
+ unreach:'<b>Server unreachable.</b><br>Please run <code>npm start</code> and open <b>http://localhost:3000</b> in your browser (not the index.html file directly).',
+ err_login:'Please sign in',err_admin:'Admin only',err_name:'Name is missing',err_invalid_id:'Invalid Discord ID',err_invalid_order:'Invalid order',err_not_possible:'Not possible',err_not_turn:"It's not your turn",err:'Error'},
+de:{del_fin:'Beendete Anfragen löschen',del_confirm:'Diese Anfrage endgültig löschen? Sie verschwindet auch beim Käufer.',del_fin_confirm:'Alle beendeten Anfragen (angenommen/abgelehnt) endgültig löschen? Sie verschwinden auch bei den Käufern.',ok_deleted:'Gelöscht',login_h:'Anmeldung erforderlich',ok_sent:'Bestellung gesendet',fx_qty:'Menge',err_x:'Etwas ist schiefgelaufen',chat:'Chat',chat_ph:'Nachricht schreiben…',chat_send:'Senden',chat_empty:'Noch keine Nachrichten.',err_empty:'Nachricht ist leer',err_chat_full:'Chat ist voll (300 Nachrichten)',img_pick:'Bild (optional)',img_change:'Bild ändern',err_invalid_image:'Ungültiges Bild (max. 2 MB)',cur_h:'Bezahlwährungen',cur_label:'Bezahlung',cur_other:'Anderes (selbst eintippen)…',cur_other_ph:'Womit möchtest du bezahlen?',cur_name:'Name der Währung',err_invalid_currency:'Bitte eine Bezahlwährung wählen (oder bei „Anderes“ etwas eintragen)',err_cur_exists:'Währung existiert schon',fixedh:'Festpreise',buyfixed:'Zum Festpreis bestellen',orneg:'Oder mach ein eigenes Angebot:',fixedavail:'Festpreis verfügbar',fixedtag:'Festpreis',fp_h:'Festpreise (Admin)',fp_price:'Preis',err_fixed:'Festpreis-Bestellung – keine Gegenangebote',err_invalid_price:'Ungültiger Festpreis',err_no_item:'Item nicht gefunden',light:'Hellmodus',dark:'Dunkelmodus',results:'Ergebnisse',hello:'Hallo,',banner:'Verhandle deinen Preis – Käufer und Verkäufer einigen sich.',foot:'BlockMarkt – Minecraft-Item-Marktplatz. Nicht mit Mojang, Microsoft oder Amazon verbunden.',login:'Mit Discord anmelden',logout:'Logout',shop:'Shop',myorders:'Meine Bestellungen',requests:'Anfragen',admin:'Admin',search:'Item suchen…',stack:'Stack',request:'Anfragen',loginfirst:'Bitte erst mit Discord anmelden',u_item:'Einzelne Items',u_stack:'Stacks',u_dk:'Doppelkisten',price:'Dein Preisangebot',note:'Notiz (Ingame-Name, Ort…)',send:'Bestellung senden',cancel:'Abbrechen',none:'Keine Einträge.',buyer:'Käufer',seller:'Verkäufer',pcs:'Stk',accept:'Annehmen',counterph:'Gegenangebot',counter:'Gegenangebot',waiting:'Warte auf Antwort…',decline:'Ablehnen',st_offen:'Offen',st_angenommen:'Angenommen',st_abgelehnt:'Abgelehnt',sellers_h:'Verkäufer (Discord-IDs)',nosellers:'Noch keine Verkäufer.',remove:'Entfernen',did:'Discord-ID',nn:'Name/Notiz',add:'Hinzufügen',items_h:'Items',del:'Löschen',iname:'Itemname',additem:'Item hinzufügen',r_admin:'Admin',r_seller:'Verkäufer',r_buyer:'Käufer',ul_item:'Item(s)',ul_stack:'Stack(s)',ul_dk:'Doppelkiste(n)',
+ unreach:'<b>Server nicht erreichbar.</b><br>Bitte <code>npm start</code> ausführen und die Seite über <b>http://localhost:3000</b> im Browser öffnen (nicht die index.html per Doppelklick).',
+ err_login:'Bitte anmelden',err_admin:'Nur Admin',err_name:'Name fehlt',err_invalid_id:'Ungültige Discord-ID',err_invalid_order:'Ungültige Bestellung',err_not_possible:'Nicht möglich',err_not_turn:'Du bist nicht am Zug',err:'Fehler'}};
+const ITEM_EN={'Diamant':'Diamond','Eisenbarren':'Iron Ingot','Goldbarren':'Gold Ingot','Smaragd':'Emerald','Netherite-Barren':'Netherite Ingot','Obsidian':'Obsidian','Eichenholz':'Oak Wood','Stein':'Stone','Redstone':'Redstone','Enderperle':'Ender Pearl','Elytra':'Elytra','Totem der Unsterblichkeit':'Totem of Undying'};
+let lang='en';try{lang=localStorage.getItem('lang')==='de'?'de':'en'}catch{}
+const T=k=>TR[lang][k]??k,nm=i=>lang==='en'?i.name:(i.de||i.name),isrc=i=>`${i.w?'img-wiki':'img'}/${e(i.k)}.png`,ic=i=>i.pic?`<img class=ic src="${e(i.pic)}" loading=lazy alt="">`:i.img||i.w?`<img class=ic src="${isrc(i)}" loading=lazy alt="" onerror="imgFb(this,'${e(i.k)}',${i.w&&i.img?1:0})">`:`<div class=ic>${e((nm(i)||'?')[0])}</div>`;
+const $=s=>document.querySelector(s),e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg,type='error'){const box=$('#toasts'),d=document.createElement('div');d.className='toast '+type;d.setAttribute('role',type==='error'?'alert':'status');
+ d.innerHTML=`<span class=ti>${{error:'⚠️',ok:'✅',info:'ℹ️'}[type]||'ℹ️'}</span><span class=tm>${e(msg)}</span><button class=tx2 aria-label="close">×</button>`;
+ const gone=()=>{if(!d.isConnected)return;d.classList.add('out');setTimeout(()=>{d.remove();if(!box.children.length){try{box.hidePopover()}catch{}}},250)};
+ d.querySelector('button').onclick=gone;box.appendChild(d);while(box.children.length>4)box.firstChild.remove();
+ try{box.hidePopover()}catch{}try{box.showPopover()}catch{}setTimeout(gone,type==='error'?6000:3500)}
+function loginPrompt(){$('#dlg').innerHTML=`<div class=lp><div class=lpi>🔒</div><h3>${T('login_h')}</h3><p>${T('loginfirst')}</p><div class=lpb><a href="/auth/login"><button class=dc>${T('login')}</button></a><button class=s onclick="$('#dlg').close()">${T('cancel')}</button></div></div>`;if(!$('#dlg').open)$('#dlg').showModal()}
+const api=async(p,m='GET',b)=>{const r=await fetch('/api'+p,{method:m,headers:{'Content-Type':'application/json'},body:b&&JSON.stringify(b)});const j=await r.json().catch(()=>({}));if(!r.ok){if(r.status===401&&j.error==='login')loginPrompt();else toast(T('err_'+j.error)!=='err_'+j.error?T('err_'+j.error):(j.error||T('err')))}return j};
+function imgFb(el,k,has){if(has&&!el.dataset.f){el.dataset.f=1;el.src='img/'+k+'.png'}else if(el.classList.contains('ic')){const d=document.createElement('div');d.className='ic';d.textContent='?';el.replaceWith(d)}else el.remove()}
+let theme;try{theme=localStorage.getItem('theme')}catch{}
+if(theme!=='dark'&&theme!=='light')theme=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';
+document.documentElement.dataset.theme=theme;
+function applyTheme(){document.documentElement.dataset.theme=theme;const b=$('#th');b.textContent=theme==='dark'?'☀️':'🌙';b.title=T(theme==='dark'?'light':'dark')}
+function toggleTheme(){theme=theme==='dark'?'light':'dark';try{localStorage.setItem('theme',theme)}catch{}applyTheme()}
+let prices=[],currencies=[],me,items=[],tab='shop';
+function setLang(l){lang=l;try{localStorage.setItem('lang',l)}catch{}$('#dlg').close?.();render()}
+async function load(){me=await api('/me');items=await api('/items');prices=await api('/prices');currencies=await api('/currencies');render()}
+function render(){const u=me.user;document.documentElement.lang=lang;
+ $('#lang').innerHTML=[['en','English'],['de','Deutsch']].map(([l,n])=>`<button class="s fl${lang===l?' on':''}" title="${n}" aria-label="${n}" onclick="setLang('${l}')">${FLAG[l]}</button>`).join(' ');
+ $('#nav').innerHTML=u?`<span class=acc>${me.role==='admin'?`<small>${T('hello')} ${e(u.name)}</small><b>${T('r_admin')}</b>`:`<b>${T('hello')} ${e(u.name)}</b>`}</span><a href="/auth/logout"><button class=s>${T('logout')}</button></a>`:`<a href="/auth/login"><button>${T('login')}</button></a>`;$('#q').placeholder=T('search');$('#ft').textContent=T('foot');applyTheme();
+ const t=[['shop',T('shop')]];if(u)t.push(['orders',me.role==='buyer'?T('myorders'):T('requests')]);if(me.role==='admin')t.push(['admin',T('admin')]);
+ if(!t.some(x=>x[0]===tab))tab='shop';
+ $('#tabs').innerHTML=t.map(([k,l])=>`<button class="${tab===k?'':'s'}" onclick="tab='${k}';render()">${l}</button>`).join(' ');
+ ({shop,orders,admin})[tab]()}
+function search(){if(tab!=='shop'){tab='shop';render()}else filt()}
+function shop(){$('#view').innerHTML=`<div class=hero>${T('banner')}</div><p id=cnt></p><div class=grid id=g></div>`;filt()}
+function filt(){const q=($('#q').value||'').toLowerCase(),r=items.filter(i=>(i.name+' '+(i.de||'')).toLowerCase().includes(q));$('#cnt').textContent=r.length+' '+T('results');$('#g').innerHTML=r.map(i=>`<div class="card p">${ic(i)}<a class=t onclick="order(${i.id})">${e(nm(i))}</a><small>${T('stack')}: ${i.stack}</small>${fxl(i)}<button class=rq onclick="order(${i.id})">${T('request')}</button></div>`).join('')||`<p>${T('none')}</p>`}
+const FLAG={en:'<svg viewBox="0 0 60 30" width="32" height="16"><clipPath id=fgs><path d="M0,0v30h60V0z"/></clipPath><clipPath id=fgt><path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/></clipPath><g clip-path="url(#fgs)"><path d="M0,0v30h60V0z" fill="#012169"/><path d="M0,0L60,30M60,0L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0L60,30M60,0L0,30" clip-path="url(#fgt)" stroke="#C8102E" stroke-width="4"/><path d="M30,0v30M0,15h60" stroke="#fff" stroke-width="10"/><path d="M30,0v30M0,15h60" stroke="#C8102E" stroke-width="6"/></g></svg>',
+de:'<svg viewBox="0 0 5 3" width="27" height="16"><rect width="5" height="3" fill="#000"/><rect y="1" width="5" height="2" fill="#DD0000"/><rect y="2" width="5" height="1" fill="#FFCE00"/></svg>'};
+const sic=(i,w)=>i.pic?`<img src="${e(i.pic)}" style="width:${w}px;height:${w}px;object-fit:contain">`:i.img||i.w?`<img src="${isrc(i)}" onerror="imgFb(this,'${e(i.k)}',${i.w&&i.img?1:0})" style="width:${w}px;image-rendering:pixelated">`:'';
+const fxl=i=>{const l=prices.filter(p=>p.itemId===i.id);return l.length?`<div class=fxl>${l.slice(0,3).map(p=>`<div class=fxr><b class="pr fxp">${p.price} ${e(cn(p.cur))}</b><small class=fx>🏷 ${p.count}× ${T('ul_'+p.unit)}</small></div>`).join('')}${l.length>3?`<small class=fx>+${l.length-3} …</small>`:''}</div>`:''};
+const cn=c=>c?(lang==='en'?c.en:c.de):'';
+const curSel=p=>`<select id=${p}cur onchange="curCh('${p}')">${currencies.map(c=>`<option value="${e(c.id)}">${e(cn(c))}</option>`).join('')}<option value=other>${T('cur_other')}</option></select><input id=${p}curt placeholder="${T('cur_other_ph')}" maxlength=40 style="display:none;width:100%;margin-top:6px">`;
+function curCh(p){$('#'+p+'curt').style.display=$('#'+p+'cur').value==='other'?'block':'none'}
+function order(id){if(!me.user)return loginPrompt();const i=items.find(x=>x.id===id);
+ $('#dlg').innerHTML=`${ic(i)}<h3>${e(nm(i))}</h3>${fxbox(i)}<p><select id=u><option value=item>${T('u_item')}</option><option value=stack>${T('u_stack')} (×${i.stack})</option><option value=dk>${T('u_dk')} (×${54*i.stack})</option></select> <input id=c type=number min=1 value=1 style="width:80px"></p><p><input id=p type=number min=0 step=any placeholder="${T('price')}" style="width:150px"> ${curSel('o')}</p><p><input id=n placeholder="${T('note')}" style="width:100%"></p><button onclick="send(${id})">${T('send')}</button> <button class=s onclick="$('#dlg').close()">${T('cancel')}</button>`;$('#dlg').showModal()}
+function fxbox(i){const l=prices.filter(p=>p.itemId===i.id);return l.length?`<div class=fxbox><b>${T('fixedh')}</b>${l.map(p=>`<div class=fxrow><span id=fs${p.id}>${fxSum(p,1)}</span><span class=fxm><label>${T('fx_qty')} × <input id=fm${p.id} type=number min=1 max=10000 value=1 oninput="fmUpd(${p.id})"></label><button class=ok onclick="sendFixed(${p.id})">${T('buyfixed')}</button></span></div>`).join('')}</div><small>${T('orneg')}</small>`:''}
+const rnd=x=>Math.round(x*1e6)/1e6,fmv=pid=>{const v=Math.floor(+$('#fm'+pid).value);return v>=1?Math.min(v,10000):1};
+const fxSum=(p,m)=>`${p.count*m}× ${T('ul_'+p.unit)} (${p.qty*m} ${T('pcs')}) – <b class=pr>${rnd(p.price*m)} ${e(cn(p.cur))}</b>`;
+function fmUpd(pid){const p=prices.find(x=>x.id===pid);if(p)$('#fs'+pid).innerHTML=fxSum(p,fmv(pid))}
+async function sendFixed(pid){const r=await api('/orders','POST',{fixedId:pid,mult:fmv(pid),note:$('#n').value});if(r.ok){$('#dlg').close();tab='orders';render();toast(T('ok_sent'),'ok')}}
+async function send(id){const r=await api('/orders','POST',{itemId:id,unit:$('#u').value,count:+$('#c').value,price:+$('#p').value,currency:$('#ocur').value,currencyText:$('#ocurt').value,note:$('#n').value});if(r.ok){$('#dlg').close();tab='orders';render();toast(T('ok_sent'),'ok')}}
+let lastO='';
+async function orders(poll){let os;
+ if(poll){try{const r=await fetch('/api/orders');if(!r.ok)return;os=await r.json()}catch{return}}else os=await api('/orders');
+ if(!Array.isArray(os)||tab!=='orders')return;
+ const sig=lang+JSON.stringify(os);if(poll&&sig===lastO)return;lastO=sig;
+ os.forEach(o=>OB[o.id]=o);
+ const v=$('#view'),keep={},sc={};v.querySelectorAll('input').forEach(x=>{if(x.id)keep[x.id]=x.value});v.querySelectorAll('.msgs').forEach(x=>sc[x.id]={t:x.scrollTop,b:x.scrollTop+x.clientHeight>=x.scrollHeight-8});
+ const fid=document.activeElement&&v.contains(document.activeElement)?document.activeElement.id:'';
+ const nf=os.filter(o=>o.canDel&&o.status!=='offen').length;
+ v.innerHTML=(nf?`<div class=otb><button class=s onclick="delFinished()">🗑 ${T('del_fin')} (${nf})</button></div>`:'')+(os.length?os.map(card).join(''):`<p>${T('none')}</p>`);
+ for(const k in keep){const x=document.getElementById(k);if(x)x.value=keep[k]}
+ v.querySelectorAll('.msgs').forEach(x=>{const z=sc[x.id];x.scrollTop=!z||z.b?x.scrollHeight:z.t});saveSeen();
+ if(fid){const x=document.getElementById(fid);if(x)x.focus()}}
+function card(o){const s=o.side,last=o.offers.at(-1),turn=o.status==='offen'&&s&&last.by!==s;
+ return `<div class=card style="margin-bottom:12px">${o.canDel?`<button class="s dl" onclick="delOrder(${o.id})" title="${T('del')}">🗑 ${T('del')}</button>`:''}${o.pic?`<img src="${e(o.pic)}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;margin-right:8px">`:o.img||o.w?`<img src="${isrc(o)}" onerror="imgFb(this,'${e(o.k)}',${o.w&&o.img?1:0})" style="width:28px;height:28px;image-rendering:pixelated;vertical-align:middle;margin-right:8px">`:''}<b>${o.count}× ${T('ul_'+o.unit)} ${e(nm({name:o.item,de:o.itemDe}))}</b> = ${o.qty} ${T('pcs')} <span class="tag ${o.status}">${T('st_'+o.status)}</span>${o.fixed?`<span class=tag>🏷 ${T('fixedtag')}</span>`:''}<br><small>${T('buyer')}: ${e(o.buyerName)}${o.sellerName?' · '+T('seller')+': '+e(o.sellerName):''}${o.note?' · '+e(o.note):''}</small><ul>${o.offers.map(f=>`<li>${T(f.by)} (${e(f.name)}): <b class=pr>${f.price} ${e(cn(o.cur))}</b></li>`).join('')}</ul>`+
+ (o.status==='offen'&&s?(turn?`<button class=ok onclick="act(${o.id},'accept')">${T('accept')} (${last.price} ${e(cn(o.cur))})</button>${o.fixed?'':` <input id=o${o.id} type=number min=0 step=any placeholder="${T('counterph')}" style="width:130px"> <button class=s onclick="counter(${o.id})">${T('counter')}</button> `}`:`<small>${T('waiting')} </small>`)+`<button class=s onclick="act(${o.id},'decline')">${T('decline')}</button>`:'')+chatBox(o)+`</div>`}
+const openChats=new Set(),OB={},seen=(()=>{try{return JSON.parse(localStorage.getItem('seen')||'{}')}catch{return{}}})();
+const saveSeen=()=>{try{localStorage.setItem('seen',JSON.stringify(seen))}catch{}};
+const ft=t=>{const d=new Date(t),td=new Date();return(d.toDateString()===td.toDateString()?'':d.toLocaleDateString([],{day:'2-digit',month:'2-digit'})+' ')+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+function chatBox(o){if(!o.side)return'';const m=o.msgs||[];if(o.status==='abgelehnt'&&!m.length)return'';
+ const op=openChats.has(o.id),un=op?0:m.slice(seen[o.id]||0).filter(x=>x.by!==o.side).length;if(op)seen[o.id]=m.length;
+ return `<details class=chat ${op?'open':''} ontoggle="chatTog(${o.id},this.open)"><summary>💬 ${T('chat')} (${m.length})${un?` <span class=badge>${un}</span>`:''}</summary><div class=msgs id=m${o.id}>${m.map(x=>`<div class="msg ${x.by===o.side?'me':'them'}"><small>${e(x.name)} · ${ft(x.t)}</small><div class=tx>${e(x.text)}</div></div>`).join('')||`<small>${T('chat_empty')}</small>`}</div>${o.status==='abgelehnt'?'':`<div class=cin><input id=ci${o.id} maxlength=500 placeholder="${T('chat_ph')}" onkeydown="if(event.key==='Enter')chatSend(${o.id})"><button onclick="chatSend(${o.id})">${T('chat_send')}</button></div>`}</details>`}
+function chatTog(id,open){if(open){openChats.add(id);const o=OB[id];if(o){seen[id]=(o.msgs||[]).length;saveSeen()}const b=$('#m'+id);if(b){b.scrollTop=b.scrollHeight;const bd=b.closest('details').querySelector('.badge');if(bd)bd.remove()}}else openChats.delete(id)}
+async function chatSend(id){const i=$('#ci'+id),t=i.value.trim();if(!t)return;i.value='';const r=await api('/orders/'+id+'/chat','POST',{text:t});if(r.ok)orders();else i.value=t}
+function confirmBox(msg,fn){$('#dlg').innerHTML=`<div class=lp><div class=lpi>🗑</div><p style="color:inherit;font-size:15px">${e(msg)}</p><div class=lpb><button class=ok id=cok>${T('del')}</button><button class=s onclick="$('#dlg').close()">${T('cancel')}</button></div></div>`;$('#cok').onclick=async()=>{$('#dlg').close();await fn()};$('#dlg').showModal()}
+function delOrder(id){confirmBox(T('del_confirm'),async()=>{const r=await api('/orders/'+id,'DELETE');if(r.ok){toast(T('ok_deleted'),'ok');orders()}})}
+function delFinished(){confirmBox(T('del_fin_confirm'),async()=>{const r=await api('/orders/finished','DELETE');if(r.ok){toast(T('ok_deleted')+' ('+r.deleted+')','ok');orders()}})}
+async function act(id,a){await api(`/orders/${id}/${a}`,'POST');orders()}
+async function counter(id){const p=$('#o'+id).value;if(p==='')return;$('#o'+id).value='';await api(`/orders/${id}/offer`,'POST',{price:+p});orders()}
+async function admin(){const s=await api('/sellers');
+ $('#view').innerHTML=`<h3>${T('sellers_h')}</h3>${s.map(x=>`<div class=card style="margin-bottom:8px">${e(x.id)} – ${e(x.note)} <button class=s onclick="del('/sellers/${x.id}')">${T('remove')}</button></div>`).join('')||`<p>${T('nosellers')}</p>`}
+ <p><input id=sid placeholder="${T('did')}"> <input id=sn placeholder="${T('nn')}"> <button onclick="addS()">${T('add')}</button></p>
+ <h3>${T('fp_h')}</h3><div id=fpl></div><p><input id=fpi list=fpd placeholder="${T('iname')}"><datalist id=fpd>${items.map(i=>`<option value="${e(nm(i))}">`).join('')}</datalist> <select id=fpu><option value=item>${T('u_item')}</option><option value=stack>${T('u_stack')}</option><option value=dk>${T('u_dk')}</option></select> <input id=fpc type=number min=1 value=1 style="width:80px"> <input id=fpp type=number min=0 step=any placeholder="${T('fp_price')}" style="width:110px"> ${curSel('f')} <button onclick="addFp()">${T('add')}</button></p>
+ <h3>${T('cur_h')}</h3>${currencies.map(c=>`<div class=card style="margin-bottom:8px">${e(cn(c))} <button class=s onclick="del('/currencies/${c.id}')">${T('del')}</button></div>`).join('')}<p><input id=cnm placeholder="${T('cur_name')}"> <button onclick="addC()">${T('add')}</button></p>
+ <h3>${T('items_h')} (${items.length})</h3><input id=aq placeholder="${T('search')}" oninput="alist()" style="width:100%;margin-bottom:8px"><div id=al></div>
+ <p><input id=in placeholder="${T('iname')}"> <select id=is><option>64</option><option>16</option><option>1</option></select> <label><small>${T('img_pick')}:</small> <input id=iimg type=file accept="image/*"></label> <button onclick="addI()">${T('additem')}</button></p>`;alist();fplist()}
+function alist(){const q=($('#aq').value||'').toLowerCase();$('#al').innerHTML=items.filter(i=>(i.name+' '+(i.de||'')).toLowerCase().includes(q)).slice(0,30).map(i=>`<div class=card style="margin-bottom:8px;display:flex;gap:10px;align-items:center">${sic(i,24)}${e(nm(i))} (${T('stack')} ${i.stack}) <button class=s onclick="del('/items/${i.id}')">${T('del')}</button>${i.custom?` <button class=s onclick="this.nextElementSibling.click()">${T('img_change')}</button><input type=file accept="image/*" hidden onchange="setImg(${i.id},this)">`:''}</div>`).join('')}
+function fplist(){$('#fpl').innerHTML=prices.map(p=>{const i=items.find(x=>x.id===p.itemId);return i?`<div class=card style="margin-bottom:8px;display:flex;gap:10px;align-items:center">${sic(i,24)}${e(nm(i))} – ${p.count}× ${T('ul_'+p.unit)} (${p.qty} ${T('pcs')}) = <b class=pr>${p.price} ${e(cn(p.cur))}</b> <button class=s onclick="del('/prices/${p.id}')">${T('del')}</button></div>`:''}).join('')||`<p>${T('none')}</p>`}
+async function addFp(){const v=$('#fpi').value.trim().toLowerCase(),i=items.find(x=>nm(x).toLowerCase()===v||x.name.toLowerCase()===v||(x.de||'').toLowerCase()===v);if(!i)return toast(T('err_no_item'));const pv=$('#fpp').value;const r=await api('/prices','POST',{itemId:i.id,unit:$('#fpu').value,count:+$('#fpc').value,price:pv===''?-1:+pv,currency:$('#fcur').value,currencyText:$('#fcurt').value});if(r.ok)await load()}
+async function del(p){await api(p,'DELETE');await load()}
+async function addC(){await api('/currencies','POST',{name:$('#cnm').value});await load()}
+async function addS(){await api('/sellers','POST',{id:$('#sid').value,note:$('#sn').value});admin()}
+const readImg=f=>new Promise(res=>{if(!f)return res(null);const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const m=Math.min(1,256/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*m));c.height=Math.max(1,Math.round(im.height*m));c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/png'))};im.onerror=()=>res(null);im.src=r.result};r.onerror=()=>res(null);r.readAsDataURL(f)});
+async function addI(){const f=$('#iimg').files[0],img=await readImg(f);if(f&&!img)return toast(T('err_invalid_image'));await api('/items','POST',{name:$('#in').value,stack:$('#is').value,image:img});await load()}
+async function setImg(id,inp){const img=await readImg(inp.files[0]);if(!img)return toast(T('err_invalid_image'));await api('/items/'+id+'/image','POST',{image:img});await load()}
+setInterval(()=>{if(tab==='orders'&&!document.hidden)orders(true)},2000);
+load().catch(()=>{$('#view').innerHTML='<div class=card>'+T('unreach')+'</div>'});
+</script></html>

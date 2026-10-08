@@ -1,0 +1,12 @@
+{
+ "name": "blockmarkt",
+ "version": "1.0.0",
+ "scripts": {
+  "start": "node --env-file=.env server.js",
+  "bilder": "node fetch-wiki-images.js"
+ },
+ "dependencies": {
+  "express": "^4.22.3",
+  "express-session": "^1.19.0"
+ }
+}
